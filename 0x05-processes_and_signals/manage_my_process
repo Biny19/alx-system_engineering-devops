@@ -3,7 +3,8 @@
 
 file="/tmp/my_process"
 
-while true; do
+while true;
+do
   echo "I am alive!" >> "$file"
   sleep 2
 done
