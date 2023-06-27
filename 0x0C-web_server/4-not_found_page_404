@@ -1,28 +1,12 @@
 #!/usr/bin/env bash
-# 404 Not Found Page
-
-apt-get update
-apt-get install -y nginx
-
-touch /var/www/html/index.html /var/www/html/404.html
-echo "Hello World!" > /var/www/html/index.html
-echo "Ceci n'est pas une page" > /var/www/html/404.html
-
-printf %s "server {
-    listen 80;
-    listen [::]:80 default_server;
-    root   root   /var/www/html/;
-    index  index.html index.htm;
-
-    location /redirect_me {
-        return 301 https://www.youtube.com/watch?v=TfgBHC5gvTI;
-    }
-
-    error_page 404 /404.html;
-    location /404 {
-        root /var/www/html/;
-        internal;
-    }
-}" > /etc/nginx/sites-available/default
-
-service nginx restart
+# redirection
+sudo apt-get update
+sudo apt-get -y install nginx
+echo "Hello World!" | sudo tee /var/www/html/index.html
+new_string="server_name _;\n\trewrite ^\/redirect_me http:\/\/54.157.131.97\/some_page.html permanent;"
+sudo sed -i "s/server_name _;/$new_string/" /etc/nginx/sites-available/default
+echo "Ceci n'est pas une page" | sudo tee /var/www/html/custom_404.html
+string_404="server_name _;\n\terror_page 404 \/custom_404.html;\n\tlocation = \/custom_404.html {\n\t\troot \/var\/www\/html;\n\t\tinternal;\n\t}"
+sudo sed -i "s/server_name _;/$string_404/" /etc/nginx/sites-available/default
+sudo nginx -t
+sudo service nginx restart
