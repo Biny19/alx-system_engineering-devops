@@ -1,21 +1,29 @@
 #!/usr/bin/env bash
-# Installs Nginx with the following configurations:
+# 404 Not Found Page
 
-sudo apt update
-sudo apt install nginx
+apt-get update
+apt-get install -y nginx
 
-# Copy the nginx configuration file from web-01
-scp 209268@web-01:/etc/nginx/nginx.conf /etc/nginx/
+touch /var/www/html/index.html /var/www/html/404.html
+echo "Hello World!" > /var/www/html/index.html
+echo "Ceci n'est pas une page" > /var/www/html/404.html
 
-# Update the hostname in the nginx configuration file
-sudo sed -i "s/03-web-01/$HOSTNAME/g" /etc/nginx/nginx.conf
+printf %s "server {
+    listen 80;
+    listen [::]:80 default_server;
+    add_header X-Served-By $HOSTNAME;
+    root   /var/www/html/;
+    index  index.html index.htm;
 
-# Restart nginx
-sudo service nginx restart
+    location /redirect_me {
+        return 301 https://www.youtube.com/watch?v=QH2-TGUlwu4;
+    }
 
-# Add the custom HTTP response header
-sudo echo "add_header X-Served-By $HOSTNAME;" >> /etc/nginx/nginx.conf
+    error_page 404 /404.html;
+    location /404 {
+        root /var/www/html/;
+        internal;
+    }
+}" > /etc/nginx/sites-available/default
 
-# Restart nginx
-sudo service nginx restart
-
+service nginx restart
