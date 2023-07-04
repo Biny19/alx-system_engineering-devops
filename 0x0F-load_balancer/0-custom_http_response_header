@@ -1,41 +1,21 @@
 #!/usr/bin/env bash
 # Installs Nginx with the following configurations:
-#+    Listens on port 80.
-#+    Returns a page containing "Hello World!" when queried
-#+     at the root with a curl GET request.
-# Configures /redirect_me as a "301 Moved Permanently".
-# Includes a custom 404 page containing "Ceci n'est pas une page".
 
-sudo apt-get update
-sudo apt-get install -y nginx
+sudo apt update
+sudo apt install nginx
 
-# create index.html file served out by server:
-# & configure the redirection and return error pages
-mkdir -p /var/www/html
-echo 'Hello World!' > /var/www/html/index.html
+# Copy the nginx configuration file from web-01
+scp 209268@web-01:/etc/nginx/nginx.conf /etc/nginx/
 
-echo "Ceci n'est pas une page" > /var/www/html/404.html
+# Update the hostname in the nginx configuration file
+sudo sed -i "s/03-web-01/$HOSTNAME/g" /etc/nginx/nginx.conf
 
-# configure Nginx
-# and with custom response header configuration:
-printf %s "server {
-     listen      80 default_server;
-     listen      [::]:80 default_server;
-     root        /var/www/html;
-     index       index.html index.htm;
-
-     location     /redirect_me {
-          return  301 https://www.youtube.com/watch?v=QH2-TGUlwu4;
-     }
-
-     error_page    404 /404.html;
-     location    /404 {
-          root    /var/www/html;
-     internal;
-     }
-
-     add_header X-Served-By \$hostname;
-}
-" > /etc/nginx/sites-available/default
-
+# Restart nginx
 sudo service nginx restart
+
+# Add the custom HTTP response header
+sudo echo "add_header X-Served-By $HOSTNAME;" >> /etc/nginx/nginx.conf
+
+# Restart nginx
+sudo service nginx restart
+
