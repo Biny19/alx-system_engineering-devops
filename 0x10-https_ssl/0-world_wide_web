@@ -1,7 +1,6 @@
-#!usr/bin/env bash
-# the subdomain www points to your load-balancer IP
+#!/usr/bin/env bash
+# shellcheck disable=SC2086
 # Information about server domains
-
 
 check_domain() {
     # Check for a valid domain
