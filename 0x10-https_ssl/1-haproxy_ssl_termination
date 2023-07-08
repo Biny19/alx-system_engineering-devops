@@ -52,4 +52,4 @@ backend web-servers
 backend web-backend
         balance roundrobin
         server 209268-web-01 34.229.184.253:80 check
-        server 209268-web-02 54.157.187.58:80 check                                            
+        server 209268-web-02 54.157.187.58:80 check
