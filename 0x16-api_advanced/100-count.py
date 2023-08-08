@@ -1,52 +1,58 @@
 #!/usr/bin/python3
 """
-Function to count words in all hot posts of a given Reddit subreddit
+Module for count_words function
 """
 import requests
 
-def count_words(subreddit, word_list, after=None, word_count={}):
+
+def count_words(subreddit, word_list, new_after='',
+                words_dict={}):
     """
-    Prints counts of given words found in hot posts of a given subreddit
+    A recursive function that queries the Reddit API,
+    parses the title of all hot articles, and prints a
+    sorted count of given keywords
     """
-    url = "https://www.reddit.com/r/{}/hot.json".format(subreddit)
-    headers = {"User-Agent": "Biny19@alxswe.com"}
-    params = {"limit": 100, "after": after}
-    
-    response = requests.get(url, headers=headers, params=params, allow_redirects=False)
-    
-    if response.status_code != 200:
-        return
-    
-    data = response.json().get('data')
-    if data is None:
-        return
-    
-    children = data.get('children')
-    if children is None:
-        return
-    
-    for child in children:
-        title = child.get('data', {}).get('title', "").lower()
-        for word in word_list:
-            word = word.lower()
-            if title.count(' ' + word + ' ') > 0:
-                word_count[word] = word_count.get(word, 0) + title.count(' ' + word + ' ')
 
-    after = data.get('after')
-    if after:
-        count_words(subreddit, word_list, after, word_count)
-    else:
-        sorted_words = sorted(word_count.items(), key=lambda x: (-x[1], x[0]))
-        for word, count in sorted_words:
-            print("{}: {}".format(word, count))
+    word_list = map(lambda x: x.lower(), word_list)
+    word_list = list(word_list)
 
-if __name__ == "__main__":
-    import sys
+    res = requests.get("https://www.reddit.com/r/{}/hot.json"
+                       .format(subreddit),
+                       headers={'User-Agent': 'Custom'},
+                       params={'after': new_after},
+                       allow_redirects=False)
 
-    if len(sys.argv) != 3:
-        print("Usage: {} <subreddit> <list of keywords>".format(sys.argv[0]))
-        print("Ex: {} programming 'python java javascript'".format(sys.argv[0]))
-    else:
-        subreddit = sys.argv[1]
-        word_list = sys.argv[2].split()
-        count_words(subreddit, word_list)
+    if res.status_code != 200:
+        return
+
+    try:
+        response = res.json().get('data', None)
+
+        if response is None:
+            return
+    except ValueError:
+        return
+
+    children = response.get('children', [])
+
+    for post in children:
+        title = post.get('data', {}).get('title', '')
+        for key_word in word_list:
+            for word in title.lower().split():
+                if key_word == word:
+                    words_dict[key_word] = words_dict.get(key_word, 0) + 1
+
+    new_after = response.get('after', None)
+
+    if new_after is None:
+        sorted_dict = sorted(words_dict.items(),
+                             key=lambda x: x[1],
+                             reverse=True)
+
+        for i in sorted_dict:
+            if i[1] != 0:
+                print("{}: {}".format(i[0], i[1]))
+        return
+
+    return count_words(subreddit, word_list,
+                       new_after, words_dict)
