@@ -1,58 +1,53 @@
 #!/usr/bin/python3
-"""
-A Module for count_words function
-"""
+"""Function to count words in all hot posts of a given Reddit subreddit."""
 import requests
 
 
-def count_words(subreddit, word_list, new_after='',
-                words_dict={}):
+def count_words(subreddit, word_list, count_dict={}, after=None):
     """
     A recursive function that queries the Reddit API,
     parses the title of all hot articles, and prints a
     sorted count of given keywords
+
+    Args:
+        subreddit (str): The subreddit to search.
+        word_list (list): The list of words to search for in post titles.
+        instances (obj): Key/value pairs of words/counts.
+        after (str): The parameter for the next page of the API results.
+        count (int): The parameter of results matched thus far.
     """
-
-    word_list = map(lambda x: x.lower(), word_list)
-    word_list = list(word_list)
-
-    r = requests.get("https://www.reddit.com/r/{}/hot.json"
-                       .format(subreddit),
-                       headers={'User-Agent': 'Custom'},
-                       params={'after': new_after},
-                       allow_redirects=False)
-
-    if r.status_code != 200:
-        return
-
-    try:
-        response = r.json().get('data', None)
-
-        if response is None:
-            return
-    except ValueError:
-        return
-
-    children = response.get('children', [])
-
-    for post in children:
-        title = post.get('data', {}).get('title', '')
-        for key_word in word_list:
-            for word in title.lower().split():
-                if key_word == word:
-                    words_dict[key_word] = words_dict.get(key_word, 0) + 1
-
-    new_after = response.get('after', None)
-
-    if new_after is None:
-        sorted_dict = sorted(words_dict.items(),
-                             key=lambda x: x[1],
-                             reverse=True)
-
-        for l in sorted_dict:
-            if l[1] != 0:
-                print("{}: {}".format(l[0], l[1]))
-        return
-
-    return count_words(subreddit, word_list,
-                       new_after, words_dict)
+    params = {"limit": 50}
+    if after:
+        params["after"] = after
+    req = requests.get(
+        "https://www.reddit.com/r/{}/hot.json".format(subreddit),
+        headers={
+            "User-Agent": "Biny19@alxswe.com"},
+        params=params,
+        allow_redirects=False)
+    if req.status_code == 200:
+        posts = req.json().get("data").get("children")
+        for post in posts:
+            title = post.get("data").get("title")
+            word_list = [word.lower() for word in word_list]
+            for word in word_list:
+                w_count = title.split().count(word)
+                if count_dict.get(word):
+                    count_dict[word] += w_count
+                else:
+                    count_dict[word] = w_count
+        if req.json().get("data").get("after"):
+            count_words(
+                subreddit,
+                word_list=word_list,
+                count_dict=count_dict,
+                after=req.json().get("data").get("after"))
+        else:
+            for pair in sorted(
+                    count_dict.items(),
+                    key=lambda kv: (
+                        kv[1],
+                        kv[0]),
+                    reverse=True):
+                if pair[1]:
+                    print("{}: {}".format(pair[0].strip(), pair[1]))
