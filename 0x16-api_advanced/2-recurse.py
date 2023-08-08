@@ -1,14 +1,11 @@
 #!/usr/bin/python3
-"""
-A list containing the titles of all hot articles for a given subreddit
-"""
+"""Function to query a list of all hot posts on a given Reddit subreddit."""
 import requests
-after = None
 
 
-def recurse(subreddit, hot_list=[]):
-    """A function returning top ten post titles recursively"""
-     url = "https://www.reddit.com/r/{}/hot/.json".format(subreddit)
+def recurse(subreddit, hot_list=[], after="", count=0):
+    """Returns a list of titles of all hot posts on a given subreddit."""
+    url = "https://www.reddit.com/r/{}/hot/.json".format(subreddit)
     headers = {
         "User-Agent": "Biny19@alxswe.com"
     }
@@ -25,8 +22,8 @@ def recurse(subreddit, hot_list=[]):
     results = response.json().get("data")
     after = results.get("after")
     count += results.get("dist")
-    for ch in results.get("children"):
-        hot_list.append(ch.get("data").get("title"))
+    for c in results.get("children"):
+        hot_list.append(c.get("data").get("title"))
 
     if after is not None:
         return recurse(subreddit, hot_list, after, count)
